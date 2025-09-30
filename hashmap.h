@@ -125,20 +125,20 @@ typedef struct Hashmap {
 } Hashmap;
 
 /* API functions */
-void hashmap_init(struct Hashmap *map);
-void hashmap_grow(struct Hashmap *map);
-int hashmap_insert(struct Hashmap *map, CustomKey key, CustomValue value);
-int hashmap_remove(struct Hashmap *RESTRICT map, CustomKey key,
+void hashmap_init(Hashmap *map);
+void hashmap_grow(Hashmap *map);
+int hashmap_insert(Hashmap *map, CustomKey key, CustomValue value);
+int hashmap_remove(Hashmap *RESTRICT map, CustomKey key,
 		   CustomValue *RESTRICT out);
-int hashmap_get(const struct Hashmap *RESTRICT map, CustomKey key,
+int hashmap_get(const Hashmap *RESTRICT map, CustomKey key,
 		CustomValue *RESTRICT out);
-HASHMAP_INLINE int hashmap_has(const struct Hashmap *map, CustomKey key);
-void hashmap_free(struct Hashmap *map);
-void hashmap_iterate(struct Hashmap *map, void *context);
+HASHMAP_INLINE int hashmap_has(const Hashmap *map, CustomKey key);
+void hashmap_free(Hashmap *map);
+void hashmap_iterate(Hashmap *map, void *context);
 /* TODO: add duplicate and clear */
 
 /* Internal functions */
-HASHMAP_INLINE void hashmap_assert(const struct Hashmap *map);
+HASHMAP_INLINE void hashmap_assert(const Hashmap *map);
 struct HashmapListNode *hashmap_list_new(struct HashmapListNode *next,
 					 CustomKey key, CustomValue value);
 HASHMAP_INLINE int (*hashmap_compare_comparison_callback(void))(CustomKey,
@@ -156,8 +156,7 @@ void hashmap_list_iterate(struct HashmapListNode *head,
 			  void *context);
 void hashmap_list_free(struct HashmapListNode *head);
 HASHMAP_INLINE unsigned long (*hashmap_compare_hash_callback(void))(CustomKey);
-HASHMAP_INLINE size_t hashmap_hash_index(const struct Hashmap *map,
-					 CustomKey key);
+HASHMAP_INLINE size_t hashmap_hash_index(const Hashmap *map, CustomKey key);
 /* Declarations stop here */
 
 #ifdef HASHMAP_LONG_JUMP_NO_ABORT
@@ -229,7 +228,8 @@ void hashmap_init(struct Hashmap *map)
 	memset((void *)map, 0, sizeof(struct Hashmap));
 
 	map->buckets = (struct HashmapListNode **)HASHMAP_REALLOC(
-		NULL, HASHMAP_DEFAULT_CAPACITY * sizeof(struct HashmapListNode *));
+		NULL,
+		HASHMAP_DEFAULT_CAPACITY * sizeof(struct HashmapListNode *));
 
 	if (map->buckets == NULL) {
 		hashmap_panic("Out of memory. Panic.");
