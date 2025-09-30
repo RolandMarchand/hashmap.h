@@ -1,0 +1,3 @@
+add_executable(test_hashmap_pass_null_abort EXCLUDE_FROM_ALL test_hashmap_pass_null_abort.c hashmap_generated.c)
+target_link_libraries(test_hashmap_pass_null_abort PRIVATE unity)
+add_test(NAME HashmapPassNullAbort COMMAND test_hashmap_pass_null_abort)

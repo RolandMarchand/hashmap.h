@@ -1,0 +1,3 @@
+add_executable(test_hashmap_out_of_mem EXCLUDE_FROM_ALL test_hashmap_out_of_mem.c hashmap_generated.c)
+target_link_libraries(test_hashmap_out_of_mem PRIVATE unity)
+add_test(NAME HashmapOutOfMemory COMMAND test_hashmap_out_of_mem)

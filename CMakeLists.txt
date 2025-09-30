@@ -29,4 +29,5 @@ else()
   message(WARNING "UndefinedBehaviorSanitizer not available.")
 endif()
 
+add_subdirectory(test)
 add_executable(hashmap hashmap.c)

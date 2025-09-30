@@ -34,7 +34,7 @@
 #define HASHMAP_NO_PANIC_ON_NULL 0
 #endif
 
-#ifdef VECTOR_LONG_JUMP_NO_ABORT
+#ifdef HASHMAP_LONG_JUMP_NO_ABORT
 #include <setjmp.h>
 extern jmp_buf abort_jmp;
 #endif
@@ -66,10 +66,10 @@ extern jmp_buf abort_jmp;
 #endif
 
 /* TODO: test, to change */
-#define HASH_CALLBACK fnv1a_32_str
-/* #define HASH_CALLBACK NULL */
-#define COMPARISON_CALLBACK strcmp
-/* #define COMPARISON_CALLBACK NULL */
+/* #define HASH_CALLBACK fnv1a_32_str */
+#define HASH_CALLBACK NULL
+/* #define COMPARISON_CALLBACK strcmp */
+#define COMPARISON_CALLBACK NULL
 
 unsigned long fnv1a_32_str(const char *str);
 
@@ -115,14 +115,14 @@ struct HashmapListNode {
 	CustomValue value;
 };
 
-struct Hashmap {
+typedef struct Hashmap {
 	struct HashmapListNode **buckets;
 	int (*iteration_callback)(CustomKey key, CustomValue value,
 				  void *context);
 	size_t size;
 	size_t capacity;
 	size_t buckets_filled;
-};
+} Hashmap;
 
 /* API functions */
 void hashmap_init(struct Hashmap *map);
@@ -135,6 +135,7 @@ int hashmap_get(const struct Hashmap *RESTRICT map, CustomKey key,
 HASHMAP_INLINE int hashmap_has(const struct Hashmap *map, CustomKey key);
 void hashmap_free(struct Hashmap *map);
 void hashmap_iterate(struct Hashmap *map, void *context);
+/* TODO: add duplicate and clear */
 
 /* Internal functions */
 HASHMAP_INLINE void hashmap_assert(const struct Hashmap *map);
@@ -225,14 +226,17 @@ void hashmap_init(struct Hashmap *map)
 			"Null passed to hashmap_init but non-null argument expected.");
 	}
 
-	map->capacity = HASHMAP_DEFAULT_CAPACITY;
-	assert(map->capacity > 0);
+	memset((void *)map, 0, sizeof(struct Hashmap));
+
 	map->buckets = (struct HashmapListNode **)HASHMAP_REALLOC(
-		NULL, map->capacity * sizeof(struct HashmapListNode *));
+		NULL, HASHMAP_DEFAULT_CAPACITY * sizeof(struct HashmapListNode *));
 
 	if (map->buckets == NULL) {
 		hashmap_panic("Out of memory. Panic.");
 	}
+
+	map->capacity = HASHMAP_DEFAULT_CAPACITY;
+	assert(map->capacity > 0);
 
 	memset((void *)map->buckets, 0,
 	       map->capacity * sizeof(struct HashmapListNode *));
@@ -519,7 +523,6 @@ HASHMAP_INLINE int hashmap_has(const struct Hashmap *map, CustomKey key)
 void hashmap_free(struct Hashmap *map)
 {
 	size_t idx = 0;
-	size_t iter = 0;
 
 	if (map == NULL) {
 		if (HASHMAP_NO_PANIC_ON_NULL) {
@@ -531,19 +534,13 @@ void hashmap_free(struct Hashmap *map)
 
 	hashmap_assert(map);
 
-	for (idx = 0; idx < map->capacity; idx++, iter++) {
-		/* Debug test for infinite loops */
-		assert(iter < 0xFFFFFFFFUL);
+	for (idx = 0; idx < map->capacity; idx++) {
 		hashmap_list_free(map->buckets[idx]);
 	}
 
 	HASHMAP_FREE((void *)map->buckets);
 
-	map->buckets = NULL;
-	map->iteration_callback = NULL;
-	map->capacity = 0;
-	map->size = 0;
-	map->buckets_filled = 0;
+	memset((void *)map, 0, sizeof(struct Hashmap));
 }
 
 void hashmap_iterate(struct Hashmap *map, void *context)
