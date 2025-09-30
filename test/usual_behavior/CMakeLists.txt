@@ -1,0 +1,3 @@
+add_executable(test_hashmap_usual_behavior EXCLUDE_FROM_ALL test_hashmap_usual_behavior.c hashmap_generated.c)
+target_link_libraries(test_hashmap_usual_behavior PRIVATE unity)
+add_test(NAME HashmapUsualBehavior COMMAND test_hashmap_usual_behavior)

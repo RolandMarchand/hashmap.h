@@ -92,17 +92,17 @@ static unsigned long hashmap_fnv1a_32_buf(const void *buf, size_t len)
 }
 
 /* If not a power of 2, find the next biggest power of 2 */
-static size_t hashmap_ceil_power_of_2(size_t num)
-{
-	num--;
-	num |= num >> 1;
-	num |= num >> 2;
-	num |= num >> 4;
-	num |= num >> 8;
-	num |= num >> 16;
-	num++;
-	return num;
-}
+/* static size_t hashmap_ceil_power_of_2(size_t num)
+ * {
+ * 	num--;
+ * 	num |= num >> 1;
+ * 	num |= num >> 2;
+ * 	num |= num >> 4;
+ * 	num |= num >> 8;
+ * 	num |= num >> 16;
+ * 	num++;
+ * 	return num;
+ * } */
 
 typedef int CustomValue;
 typedef const char *CustomKey;

@@ -7,10 +7,10 @@ enable_testing()
 add_subdirectory(out_of_mem)
 add_subdirectory(pass_null_abort)
 add_subdirectory(pass_null_ignore)
-# add_subdirectory(usual_behavior)
+add_subdirectory(usual_behavior)
 
 add_custom_target(test
-  DEPENDS test_hashmap_out_of_mem test_hashmap_pass_null_abort test_hashmap_pass_null_ignore #test_hashmap_usual_behavior
+  DEPENDS test_hashmap_out_of_mem test_hashmap_pass_null_abort test_hashmap_pass_null_ignore test_hashmap_usual_behavior
   WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test
   COMMAND ctest
 )
