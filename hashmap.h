@@ -59,6 +59,12 @@ extern jmp_buf abort_jmp;
 #define HASHMAP_INLINE inline
 #endif
 
+#ifndef __STDC_VERSION__
+#define RESTRICT
+#else
+#define RESTRICT restrict
+#endif
+
 /* TODO: test, to change */
 #define HASH_CALLBACK fnv1a_32_str
 /* #define HASH_CALLBACK NULL */
@@ -118,7 +124,39 @@ struct Hashmap {
 	size_t buckets_filled;
 };
 
-HASHMAP_NORETURN void hashmap_panic(const char *message);
+/* API functions */
+void hashmap_init(struct Hashmap *map);
+void hashmap_grow(struct Hashmap *map);
+int hashmap_insert(struct Hashmap *map, CustomKey key, CustomValue value);
+int hashmap_remove(struct Hashmap *RESTRICT map, CustomKey key,
+		   CustomValue *RESTRICT out);
+int hashmap_get(const struct Hashmap *RESTRICT map, CustomKey key,
+		CustomValue *RESTRICT out);
+HASHMAP_INLINE int hashmap_has(const struct Hashmap *map, CustomKey key);
+void hashmap_free(struct Hashmap *map);
+void hashmap_iterate(struct Hashmap *map, void *context);
+
+/* Internal functions */
+HASHMAP_INLINE void hashmap_assert(const struct Hashmap *map);
+struct HashmapListNode *hashmap_list_new(struct HashmapListNode *next,
+					 CustomKey key, CustomValue value);
+HASHMAP_INLINE int (*hashmap_compare_comparison_callback(void))(CustomKey,
+								CustomKey);
+HASHMAP_INLINE int hashmap_compare_keys(CustomKey key1, CustomKey key2);
+int hashmap_list_insert(struct HashmapListNode *head, CustomKey key,
+			CustomValue value);
+int hashmap_list_find(struct HashmapListNode *RESTRICT head, CustomKey key,
+		      CustomValue *RESTRICT out);
+int hashmap_list_remove(struct HashmapListNode **RESTRICT list, CustomKey key,
+			CustomValue *RESTRICT out);
+void hashmap_list_iterate(struct HashmapListNode *head,
+			  int (*callback)(CustomKey key, CustomValue value,
+					  void *context),
+			  void *context);
+void hashmap_list_free(struct HashmapListNode *head);
+HASHMAP_INLINE unsigned long (*hashmap_compare_hash_callback(void))(CustomKey);
+HASHMAP_INLINE size_t hashmap_hash_index(const struct Hashmap *map,
+					 CustomKey key);
 /* Declarations stop here */
 
 #ifdef HASHMAP_LONG_JUMP_NO_ABORT
@@ -144,12 +182,21 @@ HASHMAP_DEFINE_PANIC(hashmap)
 
 HASHMAP_INLINE void hashmap_assert(const struct Hashmap *map)
 {
-	/* TODO: finish the assert */
+	/* If buckets is NULL, map should be in initial/freed state */
 	if (map->buckets == NULL) {
+		assert(map->size == 0);
+		assert(map->buckets_filled == 0);
+		assert(map->capacity == 0);
 		return;
 	}
-	/* Capacity is a power of 2 */
-	assert(map->capacity && (map->capacity & (map->capacity - 1)) == 0);
+
+	/* Capacity must be a power of 2 and non-zero */
+	assert(map->capacity > 0);
+	assert((map->capacity & (map->capacity - 1)) == 0);
+
+	/* Size invariants */
+	assert(map->size >= map->buckets_filled);
+	assert(map->buckets_filled <= map->capacity);
 }
 
 struct HashmapListNode *hashmap_list_new(struct HashmapListNode *next,
@@ -178,14 +225,8 @@ void hashmap_init(struct Hashmap *map)
 			"Null passed to hashmap_init but non-null argument expected.");
 	}
 
-	if (map->buckets || map->size || map->capacity) {
-		/* TODO: unsure, may allow in debug or release builds */
-		/* TODO: handle callback and buckets_filled */
-		hashmap_panic(
-			"Uninitialized garbage memory, cannot initialize.");
-	}
-
 	map->capacity = HASHMAP_DEFAULT_CAPACITY;
+	assert(map->capacity > 0);
 	map->buckets = (struct HashmapListNode **)HASHMAP_REALLOC(
 		NULL, map->capacity * sizeof(struct HashmapListNode *));
 
@@ -241,8 +282,8 @@ int hashmap_list_insert(struct HashmapListNode *head, CustomKey key,
 	return 0;
 }
 
-int hashmap_list_find(struct HashmapListNode *head, CustomKey key,
-		      CustomValue *out)
+int hashmap_list_find(struct HashmapListNode *RESTRICT head, CustomKey key,
+		      CustomValue *RESTRICT out)
 {
 	size_t iter = 0;
 
@@ -251,7 +292,9 @@ int hashmap_list_find(struct HashmapListNode *head, CustomKey key,
 		assert(iter < 0xFFFFFFFFUL);
 
 		if (hashmap_compare_keys(head->key, key) == 0) {
-			*out = head->value;
+			if (out != NULL) {
+				*out = head->value;
+			}
 			return 1;
 		}
 	}
@@ -259,8 +302,8 @@ int hashmap_list_find(struct HashmapListNode *head, CustomKey key,
 	return 0;
 }
 
-int hashmap_list_remove(struct HashmapListNode **list, CustomKey key,
-			CustomValue *out)
+int hashmap_list_remove(struct HashmapListNode **RESTRICT list, CustomKey key,
+			CustomValue *RESTRICT out)
 {
 	struct HashmapListNode *head = NULL;
 	struct HashmapListNode *prev = NULL;
@@ -332,7 +375,8 @@ HASHMAP_INLINE unsigned long (*hashmap_compare_hash_callback(void))(CustomKey)
 	return HASH_CALLBACK;
 }
 
-HASHMAP_INLINE size_t hashmap_hash_index(struct Hashmap *map, CustomKey key)
+HASHMAP_INLINE size_t hashmap_hash_index(const struct Hashmap *map,
+					 CustomKey key)
 {
 	size_t idx = 0;
 	unsigned long (*callback)(CustomKey) = hashmap_compare_hash_callback();
@@ -351,7 +395,16 @@ HASHMAP_INLINE size_t hashmap_hash_index(struct Hashmap *map, CustomKey key)
 
 void hashmap_grow(struct Hashmap *map)
 {
-	(void)map;
+	if (map == NULL) {
+		if (HASHMAP_NO_PANIC_ON_NULL) {
+			return;
+		}
+		hashmap_panic(
+			"Null passed to hashmap_grow but non-null argument expected.");
+	}
+
+	hashmap_assert(map);
+
 	/* No growth yet :3 */
 	/* (its' oki, separate chaining can handle loads > 100%) */
 }
@@ -398,7 +451,8 @@ int hashmap_insert(struct Hashmap *map, CustomKey key, CustomValue value)
 	return overwritten;
 }
 
-int hashmap_remove(struct Hashmap *map, CustomKey key, CustomValue *out)
+int hashmap_remove(struct Hashmap *RESTRICT map, CustomKey key,
+		   CustomValue *RESTRICT out)
 {
 	size_t idx = 0;
 	int found = 0;
@@ -433,7 +487,8 @@ int hashmap_remove(struct Hashmap *map, CustomKey key, CustomValue *out)
 	return found;
 }
 
-int hashmap_get(struct Hashmap *map, CustomKey key, CustomValue *out)
+int hashmap_get(const struct Hashmap *RESTRICT map, CustomKey key,
+		CustomValue *RESTRICT out)
 {
 	size_t idx = 0;
 
@@ -454,6 +509,11 @@ int hashmap_get(struct Hashmap *map, CustomKey key, CustomValue *out)
 	idx = hashmap_hash_index(map, key);
 
 	return hashmap_list_find(map->buckets[idx], key, out);
+}
+
+HASHMAP_INLINE int hashmap_has(const struct Hashmap *map, CustomKey key)
+{
+	return hashmap_get(map, key, NULL);
 }
 
 void hashmap_free(struct Hashmap *map)
