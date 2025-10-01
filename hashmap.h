@@ -91,7 +91,8 @@ static unsigned long hashmap_fnv1a_32_buf(const void *buf, size_t len)
 	return hval;
 }
 
-/* If not a power of 2, find the next biggest power of 2 */
+/* Find the next biggest power of 2, but if already a power of 2, return
+ * itself */
 /* static size_t hashmap_ceil_power_of_2(size_t num)
  * {
  * 	num--;
@@ -150,10 +151,10 @@ int hashmap_list_find(struct HashmapListNode *RESTRICT head, CustomKey key,
 		      CustomValue *RESTRICT out);
 int hashmap_list_remove(struct HashmapListNode **RESTRICT list, CustomKey key,
 			CustomValue *RESTRICT out);
-void hashmap_list_iterate(struct HashmapListNode *head,
-			  int (*callback)(CustomKey key, CustomValue value,
-					  void *context),
-			  void *context);
+int hashmap_list_iterate(struct HashmapListNode *head,
+			 int (*callback)(CustomKey key, CustomValue value,
+					 void *context),
+			 void *context);
 void hashmap_list_free(struct HashmapListNode *head);
 HASHMAP_INLINE unsigned long (*hashmap_compare_hash_callback(void))(CustomKey);
 HASHMAP_INLINE size_t hashmap_hash_index(const Hashmap *map, CustomKey key);
@@ -327,7 +328,9 @@ int hashmap_list_remove(struct HashmapListNode **RESTRICT list, CustomKey key,
 			continue;
 		}
 
-		*out = head->value;
+		if (out != NULL) {
+			*out = head->value;
+		}
 
 		if (prev == NULL) {
 			*list = head->next;
@@ -342,10 +345,10 @@ int hashmap_list_remove(struct HashmapListNode **RESTRICT list, CustomKey key,
 	return 0;
 }
 
-void hashmap_list_iterate(struct HashmapListNode *head,
-			  int (*callback)(CustomKey key, CustomValue value,
-					  void *context),
-			  void *context)
+int hashmap_list_iterate(struct HashmapListNode *head,
+			 int (*callback)(CustomKey key, CustomValue value,
+					 void *context),
+			 void *context)
 {
 	size_t iter = 0;
 
@@ -355,8 +358,12 @@ void hashmap_list_iterate(struct HashmapListNode *head,
 		/* Debug test for infinite loops */
 		assert(iter < 0xFFFFFFFFUL);
 
-		callback(head->key, head->value, context);
+		if (callback(head->key, head->value, context) == 0) {
+			return 0;
+		}
 	}
+
+	return 1;
 }
 
 void hashmap_list_free(struct HashmapListNode *head)
@@ -546,6 +553,7 @@ void hashmap_free(struct Hashmap *map)
 void hashmap_iterate(struct Hashmap *map, void *context)
 {
 	size_t idx = 0;
+	int callback_response = 0;
 
 	if (map == NULL) {
 		if (HASHMAP_NO_PANIC_ON_NULL) {
@@ -562,8 +570,11 @@ void hashmap_iterate(struct Hashmap *map, void *context)
 	}
 
 	for (idx = 0; idx < map->capacity; idx++) {
-		hashmap_list_iterate(map->buckets[idx], map->iteration_callback,
-				     context);
+		callback_response = hashmap_list_iterate(
+			map->buckets[idx], map->iteration_callback, context);
+		if (callback_response == 0) {
+			break;
+		}
 	}
 }
 /* Definitions stop here */
