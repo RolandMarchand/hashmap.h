@@ -1,0 +1,24 @@
+name: CMake Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  BUILD_TYPE: Debug
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure CMake
+      run: cmake -S . -B build/ -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+    - name: Run Tests
+      working-directory: build
+      run: make test

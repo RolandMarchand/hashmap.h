@@ -30,4 +30,3 @@ else()
 endif()
 
 add_subdirectory(test)
-add_executable(hashmap hashmap.c)
