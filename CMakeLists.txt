@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 project(hashmap VERSION 1.0
-  DESCRIPTION "hashmap"
+  DESCRIPTION "Library to generate type-safe hashmap types"
   LANGUAGES C)
 
 set(CMAKE_C_STANDARD 90)

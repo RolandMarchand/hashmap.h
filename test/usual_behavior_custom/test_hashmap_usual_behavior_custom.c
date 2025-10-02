@@ -58,7 +58,7 @@ void test_custom_comparison(void)
 
 void test_custom_hash(void)
 {
-	TEST_ASSERT_EQUAL(fnv1a_32_str, hashmap_compare_hash_callback());
+	TEST_ASSERT_EQUAL(hashmap_fnv1a_32_str, hashmap_compare_hash_callback());
 }
 
 void test_init_from_zero(void)

@@ -11,5 +11,7 @@ void *return_null(void *ptr, size_t size);
 
 #include "hashmap.h"
 
+HASHMAP_DECLARE(Hashmap, hashmap, const char *, int, NULL, NULL)
+
 #endif /* HASHMAP_GENERATED_H */
 
