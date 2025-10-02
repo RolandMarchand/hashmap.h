@@ -65,13 +65,14 @@ extern jmp_buf abort_jmp;
 #define RESTRICT restrict
 #endif
 
-/* TODO: test, to change */
-/* #define HASH_CALLBACK fnv1a_32_str */
+/* TODO: to change to a macro-based API */
+#ifndef HASH_CALLBACK
 #define HASH_CALLBACK NULL
-/* #define COMPARISON_CALLBACK strcmp */
-#define COMPARISON_CALLBACK NULL
+#endif
 
-unsigned long fnv1a_32_str(const char *str);
+#ifndef COMPARISON_CALLBACK
+#define COMPARISON_CALLBACK NULL
+#endif
 
 #define HASHMAP_LOAD_FACTOR 0.75f
 enum { HASHMAP_DEFAULT_CAPACITY = 8, HASHMAP_GROWTH_FACTOR = 2 };
@@ -90,20 +91,6 @@ static unsigned long hashmap_fnv1a_32_buf(const void *buf, size_t len)
 
 	return hval;
 }
-
-/* Find the next biggest power of 2, but if already a power of 2, return
- * itself */
-/* static size_t hashmap_ceil_power_of_2(size_t num)
- * {
- * 	num--;
- * 	num |= num >> 1;
- * 	num |= num >> 2;
- * 	num |= num >> 4;
- * 	num |= num >> 8;
- * 	num |= num >> 16;
- * 	num++;
- * 	return num;
- * } */
 
 typedef int CustomValue;
 typedef const char *CustomKey;
@@ -136,7 +123,8 @@ int hashmap_get(const Hashmap *RESTRICT map, CustomKey key,
 HASHMAP_INLINE int hashmap_has(const Hashmap *map, CustomKey key);
 void hashmap_free(Hashmap *map);
 void hashmap_iterate(Hashmap *map, void *context);
-/* TODO: add duplicate and clear */
+void hashmap_duplicate(Hashmap *dest, Hashmap *src);
+void hashmap_clear(Hashmap *map);
 
 /* Internal functions */
 HASHMAP_INLINE void hashmap_assert(const Hashmap *map);
@@ -144,6 +132,7 @@ struct HashmapListNode *hashmap_list_new(struct HashmapListNode *next,
 					 CustomKey key, CustomValue value);
 HASHMAP_INLINE int (*hashmap_compare_comparison_callback(void))(CustomKey,
 								CustomKey);
+int hashmap_grow_internal(CustomKey key, CustomValue value, void *new_map);
 HASHMAP_INLINE int hashmap_compare_keys(CustomKey key1, CustomKey key2);
 int hashmap_list_insert(struct HashmapListNode *head, CustomKey key,
 			CustomValue value);
@@ -156,6 +145,7 @@ int hashmap_list_iterate(struct HashmapListNode *head,
 					 void *context),
 			 void *context);
 void hashmap_list_free(struct HashmapListNode *head);
+struct HashmapListNode *hashmap_list_duplicate(struct HashmapListNode *head);
 HASHMAP_INLINE unsigned long (*hashmap_compare_hash_callback(void))(CustomKey);
 HASHMAP_INLINE size_t hashmap_hash_index(const Hashmap *map, CustomKey key);
 /* Declarations stop here */
@@ -179,6 +169,7 @@ HASHMAP_INLINE size_t hashmap_hash_index(const Hashmap *map, CustomKey key);
 
 /* Definitions start here */
 struct Hashmap;
+struct HashmapListNode;
 HASHMAP_DEFINE_PANIC(hashmap)
 
 HASHMAP_INLINE void hashmap_assert(const struct Hashmap *map)
@@ -381,6 +372,30 @@ void hashmap_list_free(struct HashmapListNode *head)
 	}
 }
 
+struct HashmapListNode *hashmap_list_duplicate(struct HashmapListNode *head)
+{
+	struct HashmapListNode *new_head = NULL;
+	struct HashmapListNode *new_next = NULL;
+	size_t iter = 0;
+
+	if (head == NULL) {
+		return NULL;
+	}
+
+	new_head = hashmap_list_new(NULL, head->key, head->value);
+	new_next = new_head;
+
+	for (iter = 0; head->next != NULL;
+	     head = head->next, new_next = new_next->next, iter++) {
+		/* Debug test for infinite loops */
+		assert(iter < 0xFFFFFFFFUL);
+		new_next->next = hashmap_list_new(NULL, head->next->key,
+						  head->next->value);
+	}
+
+	return new_head;
+}
+
 HASHMAP_INLINE unsigned long (*hashmap_compare_hash_callback(void))(CustomKey)
 {
 	return HASH_CALLBACK;
@@ -406,6 +421,11 @@ HASHMAP_INLINE size_t hashmap_hash_index(const struct Hashmap *map,
 
 void hashmap_grow(struct Hashmap *map)
 {
+	size_t new_capacity = 0;
+	struct Hashmap new_map = { 0 };
+	int (*iteration_callback_backup)(CustomKey, CustomValue, void *);
+	size_t new_capacity_size = 0;
+
 	if (map == NULL) {
 		if (HASHMAP_NO_PANIC_ON_NULL) {
 			return;
@@ -416,8 +436,67 @@ void hashmap_grow(struct Hashmap *map)
 
 	hashmap_assert(map);
 
-	/* No growth yet :3 */
-	/* (its' oki, separate chaining can handle loads > 100%) */
+	if (map->buckets == NULL) {
+		hashmap_init(map);
+	}
+
+	iteration_callback_backup = map->iteration_callback;
+
+	/* Calculate the next power of 2 */
+	new_capacity = map->capacity;
+	new_capacity |= new_capacity >> 1;
+	new_capacity |= new_capacity >> 2;
+	new_capacity |= new_capacity >> 4;
+	new_capacity |= new_capacity >> 8;
+	if (sizeof(size_t) >= 4) {
+		new_capacity |= new_capacity >> 16;
+	}
+	if (sizeof(size_t) >= 8) {
+		new_capacity |= new_capacity >> 32;
+	}
+	new_capacity++;
+
+	if (new_capacity < map->capacity) {
+		/* Overflow, do not grow, let separate chaining handle
+		 * collisions */
+		return;
+	}
+	if (new_capacity > ((size_t)-1) /  sizeof(struct HashmapListNode *)) {
+		/* Would overflow, do not grow, let separate chaining handle
+		 * collisions */
+		return;		
+	}
+
+	new_capacity_size = new_capacity * sizeof(struct HashmapListNode *);
+	new_map.capacity = new_capacity;
+	new_map.buckets =
+		(struct HashmapListNode **)HASHMAP_REALLOC(NULL, new_capacity_size);
+	if (new_map.buckets == NULL) {
+		hashmap_panic("Out of memory. Panic.");
+	}
+	memset((void *)new_map.buckets, 0, new_capacity_size);
+
+	map->iteration_callback = hashmap_grow_internal;
+	hashmap_iterate(map, &new_map);
+
+	assert(map->size >= new_map.size);
+	if (map->size != new_map.size) {
+		/* Failed to grow, revert operation */
+		map->iteration_callback = iteration_callback_backup;
+		hashmap_free(&new_map);
+		return;
+	}
+
+	hashmap_free(map);
+	*map = new_map;
+	map->iteration_callback = iteration_callback_backup;
+}
+
+int hashmap_grow_internal(CustomKey key, CustomValue value, void *new_map)
+{
+	/* Should never overwrite */
+	assert(hashmap_insert(new_map, key, value) == 0);
+	return 1;
 }
 
 int hashmap_insert(struct Hashmap *map, CustomKey key, CustomValue value)
@@ -577,6 +656,70 @@ void hashmap_iterate(struct Hashmap *map, void *context)
 		}
 	}
 }
+
+void hashmap_duplicate(struct Hashmap *dest, struct Hashmap *src)
+{
+	size_t idx = 0;
+
+	if (dest == NULL || src == NULL) {
+		if (HASHMAP_NO_PANIC_ON_NULL) {
+			return;
+		}
+		hashmap_panic(
+			"Null passed to hashmap_clear but non-null argument expected.");
+	}
+	hashmap_assert(src);
+
+	if (src->capacity == 0) {
+		memset(dest, 0, sizeof(struct Hashmap));
+		return;
+	}
+
+	dest->buckets = (struct HashmapListNode **)HASHMAP_REALLOC(
+		NULL, src->capacity * sizeof(struct HashmapListNode *));
+
+	if (dest->buckets == NULL) {
+		hashmap_panic("Out of memory. Panic.");
+	}
+
+	dest->capacity = src->capacity;
+	dest->size = src->size;
+	dest->buckets_filled = src->buckets_filled;
+	dest->iteration_callback = src->iteration_callback;
+
+	memset((void *)dest->buckets, 0,
+	       dest->capacity * sizeof(struct HashmapListNode *));
+
+	for (idx = 0; idx < dest->capacity; idx++) {
+		dest->buckets[idx] = hashmap_list_duplicate(src->buckets[idx]);
+	}
+
+	hashmap_assert(dest);
+}
+
+void hashmap_clear(struct Hashmap *map)
+{
+	size_t idx = 0;
+
+	if (map == NULL) {
+		if (HASHMAP_NO_PANIC_ON_NULL) {
+			return;
+		}
+		hashmap_panic(
+			"Null passed to hashmap_clear but non-null argument expected.");
+	}
+
+	hashmap_assert(map);
+
+	for (idx = 0; idx < map->capacity; idx++) {
+		hashmap_list_free(map->buckets[idx]);
+		map->buckets[idx] = NULL;
+	}
+
+	map->size = 0;
+	map->buckets_filled = 0;
+}
+
 /* Definitions stop here */
 
 /****************************************************************************

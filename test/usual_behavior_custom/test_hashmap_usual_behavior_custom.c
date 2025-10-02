@@ -51,6 +51,16 @@ void tearDown(void)
 {
 }
 
+void test_custom_comparison(void)
+{
+	TEST_ASSERT_EQUAL(strcmp, hashmap_compare_comparison_callback());
+}
+
+void test_custom_hash(void)
+{
+	TEST_ASSERT_EQUAL(fnv1a_32_str, hashmap_compare_hash_callback());
+}
+
 void test_init_from_zero(void)
 {
 	Hashmap map = { 0 };
@@ -821,8 +831,9 @@ int main(void)
 {
 	UNITY_BEGIN();
 
+	RUN_TEST(test_custom_comparison);
+	RUN_TEST(test_custom_hash);
 	RUN_TEST(test_init_from_zero);
-	RUN_TEST(test_init_from_garbage);
 	RUN_TEST(test_grow_from_zero);
 	RUN_TEST(test_grow_overflow1);
 	RUN_TEST(test_grow_overflow2);

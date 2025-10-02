@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-void *return_null(void *ignored1, size_t ignored2);
+void *return_null(void *ptr, size_t size);
 
 #define HASHMAP_REALLOC(p, s) (return_null((p), (s)))
 #define HASHMAP_FREE(p) (free((p)))
