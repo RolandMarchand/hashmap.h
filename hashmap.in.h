@@ -200,13 +200,13 @@ typedef const char *CustomKey;
 
 #define HASHMAP_DECLARE_STRING(Struct_Name_, Functions_Prefix_,               \
 			       Custom_Value_Type_)                            \
-	HASHMAP_DECLARE(Struct_Name_, Functions_Prefix_, const char *,	      \
+	HASHMAP_DECLARE(Struct_Name_, Functions_Prefix_, const char *,        \
 			Custom_Value_Type_, Functions_Prefix_##_fnv1a_32_str, \
 			strcmp)
 
 #define HASHMAP_DEFINE_STRING(Struct_Name_, Functions_Prefix_,               \
 			      Custom_Value_Type_)                            \
-	HASHMAP_DEFINE(Struct_Name_, Functions_Prefix_, const char *,	     \
+	HASHMAP_DEFINE(Struct_Name_, Functions_Prefix_, const char *,        \
 		       Custom_Value_Type_, Functions_Prefix_##_fnv1a_32_str, \
 		       strcmp)
 
@@ -238,7 +238,7 @@ int hashmap_get(const Hashmap *RESTRICT map, CustomKey key,
 HASHMAP_INLINE int hashmap_has(const Hashmap *map, CustomKey key);
 void hashmap_free(Hashmap *map);
 void hashmap_iterate(Hashmap *map, void *context);
-void hashmap_duplicate(Hashmap *dest, Hashmap *src);
+void hashmap_duplicate(Hashmap *RESTRICT dest, Hashmap *RESTRICT src);
 void hashmap_clear(Hashmap *map);
 
 /* Internal functions */
@@ -781,7 +781,8 @@ void hashmap_iterate(struct Hashmap *map, void *context)
 	}
 }
 
-void hashmap_duplicate(struct Hashmap *dest, struct Hashmap *src)
+void hashmap_duplicate(struct Hashmap *RESTRICT dest,
+		       struct Hashmap *RESTRICT src)
 {
 	size_t idx = 0;
 

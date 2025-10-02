@@ -192,13 +192,13 @@ enum { HASHMAP_DEFAULT_CAPACITY = 8, HASHMAP_GROWTH_FACTOR = 2 };
 
 #define HASHMAP_DECLARE_STRING(Struct_Name_, Functions_Prefix_,               \
 			       Custom_Value_Type_)                            \
-	HASHMAP_DECLARE(Struct_Name_, Functions_Prefix_, const char *,	      \
+	HASHMAP_DECLARE(Struct_Name_, Functions_Prefix_, const char *,        \
 			Custom_Value_Type_, Functions_Prefix_##_fnv1a_32_str, \
 			strcmp)
 
 #define HASHMAP_DEFINE_STRING(Struct_Name_, Functions_Prefix_,               \
 			      Custom_Value_Type_)                            \
-	HASHMAP_DEFINE(Struct_Name_, Functions_Prefix_, const char *,	     \
+	HASHMAP_DEFINE(Struct_Name_, Functions_Prefix_, const char *,        \
 		       Custom_Value_Type_, Functions_Prefix_##_fnv1a_32_str, \
 		       strcmp)
 
@@ -230,7 +230,7 @@ int Functions_Prefix_##_get(const Struct_Name_ *RESTRICT map, Custom_Key_Type_ k
 HASHMAP_INLINE int Functions_Prefix_##_has(const Struct_Name_ *map, Custom_Key_Type_ key);\
 void Functions_Prefix_##_free(Struct_Name_ *map);\
 void Functions_Prefix_##_iterate(Struct_Name_ *map, void *context);\
-void Functions_Prefix_##_duplicate(Struct_Name_ *dest, Struct_Name_ *src);\
+void Functions_Prefix_##_duplicate(Struct_Name_ *RESTRICT dest, Struct_Name_ *RESTRICT src);\
 void Functions_Prefix_##_clear(Struct_Name_ *map);\
 \
 /* Internal functions */\
@@ -772,7 +772,8 @@ void Functions_Prefix_##_iterate(struct Struct_Name_ *map, void *context)\
 	}\
 }\
 \
-void Functions_Prefix_##_duplicate(struct Struct_Name_ *dest, struct Struct_Name_ *src)\
+void Functions_Prefix_##_duplicate(struct Struct_Name_ *RESTRICT dest,\
+		       struct Struct_Name_ *RESTRICT src)\
 {\
 	size_t idx = 0;\
 \
