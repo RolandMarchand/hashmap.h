@@ -6,38 +6,36 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 /* Library to generate type-safe hashmap types.
  * 
  * This library is portable (tested on GCC/Clang/MSVC/ICX, x86/x86_64/ARM64,
  * all warnings and pedantic) and is C89 compatible.
  *
- * To generate hashmaps, use the macros HASHMAP_DECLARE() to generate the header,
- * and HASHMAP_DEFINE() to generate the source. It is recommended to place them
- * in their respective files. Generate as many different types of hashmaps as
- * you want.
+ * To generate hashmaps, use the macros HASHMAP_DECLARE() to generate the
+ * header, and HASHMAP_DEFINE() to generate the source. For string hashmaps, use
+ * the macros HASHMAP_DECLARE_STRING() and HASHMAP_DEFINE_STRING(). It is
+ * recommended to place them in their respective files. Generate as many
+ * different types of hashmaps as you want.
  *
  * HASHMAP_DECLARE() takes six arguments: the struct name, the function prefix,
  * the key type, the value type, an optional hash function (NULL for default
  * FNV-1a), and an optional key comparison function (NULL for memcmp).
  *
- * To generate string hashmaps, use the macros HASHMAP_DECLARE_STRING() to
- * generate the header, and HASHMAP_DEFINE_STRING() to generate the source. It
- * is recommended to place them in their respective files. Generate as many
- * different types of string-based hashmaps as you want.
- *
  * HASHMAP_DECLARE_STRING() takes three arguments: the struct name, the function
- * prefix, and the value type. The key type is automatically set to const char
- * *, the hash function to FNV-1a (reads string content instead of raw pointer),
+ * prefix, and the value type. The key type is automatically set to const char *,
+ * the hash function to FNV-1a (reads string content instead of raw pointer),
  * and the comparison function to strcmp.
  *
  * Note that with HASHMAP_DECLARE() and HASHMAP_DEFINE() by default, the key
  * value itself is compared and hashed. For instance, if the key is a char * and
  * the hash and comparison functions are set to NULL, the pointer itself will be
- * hashed and compared (not the string it points to). So, two different strings
- * with the same contents won't be equal or produce the same hash. To fix this,
- * pass hashing and comparison functions that read the pointer's content, or use
- * HASMAP_DECLARE_STRING() and HASMAP_DEFINE_STRING() if your keys are const
- * char *.
+ * hashed and compared (not the string it points to).
+ *
+ * This means two different strings with the same contents won't be equal or
+ * produce the same hash. To fix this, pass hashing and comparison functions
+ * that read the pointer's content, or use HASHMAP_DECLARE_STRING() and
+ * HASHMAP_DEFINE_STRING() if your keys are const char *.
  *
  * This library is not thread safe.
  *

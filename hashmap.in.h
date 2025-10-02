@@ -23,18 +23,19 @@
  * FNV-1a), and an optional key comparison function (NULL for memcmp).
  *
  * HASHMAP_DECLARE_STRING() takes three arguments: the struct name, the function
- * prefix, and the value type. The key type is automatically set to const char
- * *, the hash function to FNV-1a (reads string content instead of raw pointer),
+ * prefix, and the value type. The key type is automatically set to const char *,
+ * the hash function to FNV-1a (reads string content instead of raw pointer),
  * and the comparison function to strcmp.
  *
  * Note that with HASHMAP_DECLARE() and HASHMAP_DEFINE() by default, the key
  * value itself is compared and hashed. For instance, if the key is a char * and
  * the hash and comparison functions are set to NULL, the pointer itself will be
- * hashed and compared (not the string it points to). So, two different strings
- * with the same contents won't be equal or produce the same hash. To fix this,
- * pass hashing and comparison functions that read the pointer's content, or use
- * HASMAP_DECLARE_STRING() and HASMAP_DEFINE_STRING() if your keys are const
- * char *.
+ * hashed and compared (not the string it points to).
+ *
+ * This means two different strings with the same contents won't be equal or
+ * produce the same hash. To fix this, pass hashing and comparison functions
+ * that read the pointer's content, or use HASHMAP_DECLARE_STRING() and
+ * HASHMAP_DEFINE_STRING() if your keys are const char *.
  *
  * This library is not thread safe.
  *
