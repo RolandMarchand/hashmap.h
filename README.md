@@ -119,8 +119,8 @@ HASHMAP_DEFINE_STRING(MyMap, my_map, int)
 /* WRONG: Compares pointer addresses, not string content */
 HASHMAP_DECLARE(BadMap, bad_map, char *, int, NULL, NULL)
 
-/* CORRECT: Uses strcmp to compare string content */
-HASHMAP_DECLARE(GoodMap, good_map, const char *, int, NULL, strcmp)
+/* CORRECT: Uses strcmp and fnv1a_32_str (comes with library) to compare string content */
+HASHMAP_DECLARE(GoodMap, good_map, const char *, int, good_map_fnv1a_32_str, strcmp)
 
 /* BEST: For string keys, use the STRING variant */
 HASHMAP_DECLARE_STRING(BestMap, best_map, int)
