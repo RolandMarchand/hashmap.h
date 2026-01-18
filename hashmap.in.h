@@ -97,6 +97,9 @@
  * int hashmap_has(const Hashmap *map, const char *key)
  *   Check if key exists in hashmap. Returns 1 if found, 0 otherwise.
  *
+ * size_t hashmap_size(const Hashmap *map)
+ *   Return the amount of elements stored in the hashmap. Same as map.size.
+ *
  * void hashmap_iterate(Hashmap *map, void *context)
  *   Iterate over all key-value pairs using map->iteration_callback.
  *   Callback signature: int callback(const char *key, int value, void *context).
@@ -236,6 +239,7 @@ int hashmap_remove(Hashmap *RESTRICT map, CustomKey key,
 int hashmap_get(const Hashmap *RESTRICT map, CustomKey key,
 		CustomValue *RESTRICT out);
 HASHMAP_INLINE int hashmap_has(const Hashmap *map, CustomKey key);
+HASHMAP_INLINE size_t hashmap_size(const Hashmap *map);
 void hashmap_free(Hashmap *map);
 void hashmap_iterate(Hashmap *map, void *context);
 void hashmap_duplicate(Hashmap *RESTRICT dest, Hashmap *RESTRICT src);
@@ -728,6 +732,11 @@ int hashmap_get(const struct Hashmap *RESTRICT map, CustomKey key,
 HASHMAP_INLINE int hashmap_has(const struct Hashmap *map, CustomKey key)
 {
 	return hashmap_get(map, key, NULL);
+}
+
+HASHMAP_INLINE size_t hashmap_size(const Hashmap *map)
+{
+	return map->size;
 }
 
 void hashmap_free(struct Hashmap *map)

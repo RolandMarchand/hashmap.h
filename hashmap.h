@@ -97,6 +97,9 @@
  * int hashmap_has(const Hashmap *map, const char *key)
  *   Check if key exists in hashmap. Returns 1 if found, 0 otherwise.
  *
+ * size_t hashmap_size(const Hashmap *map)
+ *   Return the amount of elements stored in the hashmap. Same as map.size.
+ *
  * void hashmap_iterate(Hashmap *map, void *context)
  *   Iterate over all key-value pairs using map->iteration_callback.
  *   Callback signature: int callback(const char *key, int value, void *context).
@@ -228,6 +231,7 @@ int Functions_Prefix_##_remove(Struct_Name_ *RESTRICT map, Custom_Key_Type_ key,
 int Functions_Prefix_##_get(const Struct_Name_ *RESTRICT map, Custom_Key_Type_ key,\
 		Custom_Value_Type_ *RESTRICT out);\
 HASHMAP_INLINE int Functions_Prefix_##_has(const Struct_Name_ *map, Custom_Key_Type_ key);\
+HASHMAP_INLINE size_t Functions_Prefix_##_size(const Struct_Name_ *map);\
 void Functions_Prefix_##_free(Struct_Name_ *map);\
 void Functions_Prefix_##_iterate(Struct_Name_ *map, void *context);\
 void Functions_Prefix_##_duplicate(Struct_Name_ *RESTRICT dest, Struct_Name_ *RESTRICT src);\
@@ -719,6 +723,11 @@ int Functions_Prefix_##_get(const struct Struct_Name_ *RESTRICT map, Custom_Key_
 HASHMAP_INLINE int Functions_Prefix_##_has(const struct Struct_Name_ *map, Custom_Key_Type_ key)\
 {\
 	return Functions_Prefix_##_get(map, key, NULL);\
+}\
+\
+HASHMAP_INLINE size_t Functions_Prefix_##_size(const Struct_Name_ *map)\
+{\
+	return map->size;\
 }\
 \
 void Functions_Prefix_##_free(struct Struct_Name_ *map)\

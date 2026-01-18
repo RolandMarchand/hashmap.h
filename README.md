@@ -134,6 +134,7 @@ HASHMAP_DECLARE_STRING(BestMap, best_map, int)
 - `hashmap_insert(map, key, value)` - Insert or update (returns 1 if overwritten, 0 if new)
 - `hashmap_get(map, key, &out)` - Retrieve value (returns 1 if found, 0 otherwise)
 - `hashmap_has(map, key)` - Check if key exists
+- `hashmap_size(map)` - Return the amount of elements stored in the hashmap, same as map.size
 - `hashmap_remove(map, key, &out)` - Remove key-value pair (returns 1 if removed, 0 if not found)
 - `hashmap_iterate(map, context)` - Iterate over all pairs using callback
 - `hashmap_duplicate(dest, src)` - Deep copy hashmap
