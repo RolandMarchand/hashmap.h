@@ -52,6 +52,7 @@ HASHMAP_DECLARE_STRING(UserMap, user_map, int)
 2. Define the implementation (usually in a .c file):
 
 ```c
+/* my_hashmap.c */
 #include "my_hashmap.h"
 
 HASHMAP_DEFINE_STRING(UserMap, user_map, int)
@@ -128,6 +129,8 @@ HASHMAP_DECLARE_STRING(BestMap, best_map, int)
 
 ## API Overview
 
+- `hashmap_init(map)` - Initializes the hashmap
+- `hashmap_grow(map)` - Grow the hashmap
 - `hashmap_insert(map, key, value)` - Insert or update (returns 1 if overwritten, 0 if new)
 - `hashmap_get(map, key, &out)` - Retrieve value (returns 1 if found, 0 otherwise)
 - `hashmap_has(map, key)` - Check if key exists
