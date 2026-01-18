@@ -92,23 +92,23 @@ def main():
 def tokenize_code_line(line):
     """
     Tokenizes a line of code, keeping string literals intact.
-    
+
     Args:
         line (str): A line of code to tokenize
-        
+
     Returns:
         list: List of tokens where strings are preserved as complete tokens
     """
     pattern = r'("(?:[^"\\]|\\.)*")|' + r'([^"]+)'
-    
+
     tokens = []
     matches = re.finditer(pattern, line)
-    
+
     for match in matches:
         token = match.group(0)
         if token:
             tokens.append(token)
-    
+
     return tokens
 
 if __name__ == "__main__":

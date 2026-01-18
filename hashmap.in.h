@@ -8,7 +8,7 @@
 #include <string.h>
 
 /* Library to generate type-safe hashmap types.
- * 
+ *
  * This library is portable (tested on GCC/Clang/MSVC/ICX, x86/x86_64/ARM64,
  * all warnings and pedantic) and is C89 compatible.
  *
@@ -43,31 +43,31 @@
  * resolution.
  *
  * Load factor is set at 0.75, with capacity growing by powers of 2.
- * 
+ *
  * To configure this library #define the symbols before including the library.
  * This is usually done in the header file where HASHMAP_DECLARE() is called.
- * 
+ *
  * Configuration options:
- * 
+ *
  * - HASHMAP_NO_PANIC_ON_NULL (default 0): if true (1), does not panic upon
  *   passing NULL to hashmap functions. Otherwise, panic.
- * 
+ *
  * - HASHMAP_REALLOC (default realloc(3)): specify the allocator. If using
  *   a custom allocator, must also specify HASHMAP_FREE.
- * 
+ *
  * - HASHMAP_FREE (default free(3)): specify the deallocator. If using a
  *   custom deallocator, must also specify HASHMAP_REALLOC.
- * 
+ *
  * - HASHMAP_LONG_JUMP_NO_ABORT (default undefined): for testing only. Jump to
  *   externally defined "jmp_buf abort_jmp" instead of panicking. Unlike other
  *   configuration options, must be defined before including the library.
  *
- * 
+ *
  * API Functions:
  *
  * The following documentation takes this generated hashmap for instance:
  * HASHMAP_DECLARE(Hashmap, hashmap, const char *, int, fnv1a_32_str, strcmp)
- * 
+ *
  * All functions panic if map is NULL (unless HASHMAP_NO_PANIC_ON_NULL).
  *
  * void hashmap_init(Hashmap *map)
@@ -117,25 +117,25 @@
  *  {
  *     Hashmap map = {0};
  *     int value;
- *     
+ *
  *     hashmap_insert(&map, "hello", 10);
  *     hashmap_insert(&map, "world", 20);
  *     hashmap_insert(&map, "test", 30);
- *     
+ *
  *     if (hashmap_get(&map, "hello", &value)) {
  *         printf("Found: %d\n", value);
  *     }
- *     
+ *
  *     if (hashmap_has(&map, "world")) {
  *         hashmap_remove(&map, "world", NULL);
  *     }
- *     
+ *
  *     hashmap_insert(&map, "hello", 99);  // Overwrites existing value
- *     
+ *
  *     hashmap_clear(&map);
- *     
+ *
  *     hashmap_free(&map);
- *     
+ *
  *     return 0;
  *  }
  */
