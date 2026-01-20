@@ -1,6 +1,6 @@
-/* simple_hashmap.h - A basic hashmap implementation for C89 */
-#ifndef _SIMPLE_HASHMAP_H
-#define _SIMPLE_HASHMAP_H
+/* hashmap.h - A basic hashmap implementation for C89 */
+#ifndef HASHMAP_H
+#define HASHMAP_H
 
 #include <assert.h>
 #include <stdio.h>
@@ -172,16 +172,6 @@ extern jmp_buf abort_jmp;
 #endif
 
 #ifndef __STDC_VERSION__
-#define HASHMAP_INLINE
-#elif _MSC_VER
-#define HASHMAP_INLINE __forceinline
-#elif defined(__GNUC__) || defined(__clang__)
-#define HASHMAP_INLINE __attribute__((always_inline)) inline
-#else
-#define HASHMAP_INLINE inline
-#endif
-
-#ifndef __STDC_VERSION__
 #define RESTRICT
 #else
 #define RESTRICT restrict
@@ -238,22 +228,22 @@ int hashmap_remove(Hashmap *RESTRICT map, CustomKey key,
 		   CustomValue *RESTRICT out);
 int hashmap_get(const Hashmap *RESTRICT map, CustomKey key,
 		CustomValue *RESTRICT out);
-HASHMAP_INLINE int hashmap_has(const Hashmap *map, CustomKey key);
-HASHMAP_INLINE size_t hashmap_size(const Hashmap *map);
+int hashmap_has(const Hashmap *map, CustomKey key);
+size_t hashmap_size(const Hashmap *map);
 void hashmap_free(Hashmap *map);
 void hashmap_iterate(Hashmap *map, void *context);
 void hashmap_duplicate(Hashmap *RESTRICT dest, Hashmap *RESTRICT src);
 void hashmap_clear(Hashmap *map);
 
 /* Internal functions */
-HASHMAP_INLINE void hashmap_assert(const Hashmap *map);
-HASHMAP_INLINE void hashmap_assert_internal(const struct Hashmap *map);
+void hashmap_assert(const Hashmap *map);
+void hashmap_assert_internal(const struct Hashmap *map);
 struct HashmapListNode *hashmap_list_new(struct HashmapListNode *next,
 					 CustomKey key, CustomValue value);
-HASHMAP_INLINE int (*hashmap_compare_comparison_callback(void))(CustomKey,
+int (*hashmap_compare_comparison_callback(void))(CustomKey,
 								CustomKey);
 int hashmap_grow_internal(CustomKey key, CustomValue value, void *new_map);
-HASHMAP_INLINE int hashmap_compare_keys(CustomKey key1, CustomKey key2);
+int hashmap_compare_keys(CustomKey key1, CustomKey key2);
 int hashmap_list_insert(struct HashmapListNode *head, CustomKey key,
 			CustomValue value);
 int hashmap_list_find(struct HashmapListNode *RESTRICT head, CustomKey key,
@@ -266,8 +256,8 @@ int hashmap_list_iterate(struct HashmapListNode *head,
 			 void *context);
 void hashmap_list_free(struct HashmapListNode *head);
 struct HashmapListNode *hashmap_list_duplicate(struct HashmapListNode *head);
-HASHMAP_INLINE unsigned long (*hashmap_compare_hash_callback(void))(CustomKey);
-HASHMAP_INLINE size_t hashmap_hash_index(const Hashmap *map, CustomKey key);
+unsigned long (*hashmap_compare_hash_callback(void))(CustomKey);
+size_t hashmap_hash_index(const Hashmap *map, CustomKey key);
 unsigned long hashmap_fnv1a_32_buf(const void *buf, size_t len);
 unsigned long hashmap_fnv1a_32_str(const char *str);
 /* Declarations stop here */
@@ -294,7 +284,7 @@ struct Hashmap;
 struct HashmapListNode;
 HASHMAP_DEFINE_PANIC(hashmap)
 
-HASHMAP_INLINE void hashmap_assert(const struct Hashmap *map)
+void hashmap_assert(const struct Hashmap *map)
 {
 	/* If buckets is NULL, map should be in initial/freed state */
 	if (map->buckets == NULL) {
@@ -308,7 +298,7 @@ HASHMAP_INLINE void hashmap_assert(const struct Hashmap *map)
 }
 
 /* Separated into its own function to avoid Clang complexity warning */
-HASHMAP_INLINE void hashmap_assert_internal(const struct Hashmap *map)
+void hashmap_assert_internal(const struct Hashmap *map)
 {
 	/* Capacity must be a power of 2 and non-zero */
 	assert(map->capacity > 0);
@@ -364,13 +354,13 @@ void hashmap_init(struct Hashmap *map)
 	hashmap_assert(map);
 }
 
-HASHMAP_INLINE int (*hashmap_compare_comparison_callback(void))(CustomKey,
+int (*hashmap_compare_comparison_callback(void))(CustomKey,
 								CustomKey)
 {
 	return COMPARISON_CALLBACK;
 }
 
-HASHMAP_INLINE int hashmap_compare_keys(CustomKey key1, CustomKey key2)
+int hashmap_compare_keys(CustomKey key1, CustomKey key2)
 {
 	int (*callback)(CustomKey, CustomKey) =
 		hashmap_compare_comparison_callback();
@@ -524,12 +514,12 @@ struct HashmapListNode *hashmap_list_duplicate(struct HashmapListNode *head)
 	return new_head;
 }
 
-HASHMAP_INLINE unsigned long (*hashmap_compare_hash_callback(void))(CustomKey)
+unsigned long (*hashmap_compare_hash_callback(void))(CustomKey)
 {
 	return HASH_CALLBACK;
 }
 
-HASHMAP_INLINE size_t hashmap_hash_index(const struct Hashmap *map,
+size_t hashmap_hash_index(const struct Hashmap *map,
 					 CustomKey key)
 {
 	size_t idx = 0;
@@ -729,12 +719,12 @@ int hashmap_get(const struct Hashmap *RESTRICT map, CustomKey key,
 	return hashmap_list_find(map->buckets[idx], key, out);
 }
 
-HASHMAP_INLINE int hashmap_has(const struct Hashmap *map, CustomKey key)
+int hashmap_has(const struct Hashmap *map, CustomKey key)
 {
 	return hashmap_get(map, key, NULL);
 }
 
-HASHMAP_INLINE size_t hashmap_size(const Hashmap *map)
+size_t hashmap_size(const Hashmap *map)
 {
 	return map->size;
 }
@@ -899,4 +889,4 @@ unsigned long hashmap_fnv1a_32_str(const char *str)
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
  ****************************************************************************/
 
-#endif /* _SIMPLE_HASHMAP_H */
+#endif /* HASHMAP_H */

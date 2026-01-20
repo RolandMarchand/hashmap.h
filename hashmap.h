@@ -1,6 +1,6 @@
-/* simple_hashmap.h - A basic hashmap implementation for C89 */
-#ifndef _SIMPLE_HASHMAP_H
-#define _SIMPLE_HASHMAP_H
+/* hashmap.h - A basic hashmap implementation for C89 */
+#ifndef HASHMAP_H
+#define HASHMAP_H
 
 #include <assert.h>
 #include <stdio.h>
@@ -172,16 +172,6 @@ extern jmp_buf abort_jmp;
 #endif
 
 #ifndef __STDC_VERSION__
-#define HASHMAP_INLINE
-#elif _MSC_VER
-#define HASHMAP_INLINE __forceinline
-#elif defined(__GNUC__) || defined(__clang__)
-#define HASHMAP_INLINE __attribute__((always_inline)) inline
-#else
-#define HASHMAP_INLINE inline
-#endif
-
-#ifndef __STDC_VERSION__
 #define RESTRICT
 #else
 #define RESTRICT restrict
@@ -230,22 +220,22 @@ int Functions_Prefix_##_remove(Struct_Name_ *RESTRICT map, Custom_Key_Type_ key,
 		   Custom_Value_Type_ *RESTRICT out);\
 int Functions_Prefix_##_get(const Struct_Name_ *RESTRICT map, Custom_Key_Type_ key,\
 		Custom_Value_Type_ *RESTRICT out);\
-HASHMAP_INLINE int Functions_Prefix_##_has(const Struct_Name_ *map, Custom_Key_Type_ key);\
-HASHMAP_INLINE size_t Functions_Prefix_##_size(const Struct_Name_ *map);\
+int Functions_Prefix_##_has(const Struct_Name_ *map, Custom_Key_Type_ key);\
+size_t Functions_Prefix_##_size(const Struct_Name_ *map);\
 void Functions_Prefix_##_free(Struct_Name_ *map);\
 void Functions_Prefix_##_iterate(Struct_Name_ *map, void *context);\
 void Functions_Prefix_##_duplicate(Struct_Name_ *RESTRICT dest, Struct_Name_ *RESTRICT src);\
 void Functions_Prefix_##_clear(Struct_Name_ *map);\
 \
 /* Internal functions */\
-HASHMAP_INLINE void Functions_Prefix_##_assert(const Struct_Name_ *map);\
-HASHMAP_INLINE void Functions_Prefix_##_assert_internal(const struct Struct_Name_ *map);\
+void Functions_Prefix_##_assert(const Struct_Name_ *map);\
+void Functions_Prefix_##_assert_internal(const struct Struct_Name_ *map);\
 struct Struct_Name_##ListNode *Functions_Prefix_##_list_new(struct Struct_Name_##ListNode *next,\
 					 Custom_Key_Type_ key, Custom_Value_Type_ value);\
-HASHMAP_INLINE int (*Functions_Prefix_##_compare_comparison_callback(void))(Custom_Key_Type_,\
+int (*Functions_Prefix_##_compare_comparison_callback(void))(Custom_Key_Type_,\
 								Custom_Key_Type_);\
 int Functions_Prefix_##_grow_internal(Custom_Key_Type_ key, Custom_Value_Type_ value, void *new_map);\
-HASHMAP_INLINE int Functions_Prefix_##_compare_keys(Custom_Key_Type_ key1, Custom_Key_Type_ key2);\
+int Functions_Prefix_##_compare_keys(Custom_Key_Type_ key1, Custom_Key_Type_ key2);\
 int Functions_Prefix_##_list_insert(struct Struct_Name_##ListNode *head, Custom_Key_Type_ key,\
 			Custom_Value_Type_ value);\
 int Functions_Prefix_##_list_find(struct Struct_Name_##ListNode *RESTRICT head, Custom_Key_Type_ key,\
@@ -258,8 +248,8 @@ int Functions_Prefix_##_list_iterate(struct Struct_Name_##ListNode *head,\
 			 void *context);\
 void Functions_Prefix_##_list_free(struct Struct_Name_##ListNode *head);\
 struct Struct_Name_##ListNode *Functions_Prefix_##_list_duplicate(struct Struct_Name_##ListNode *head);\
-HASHMAP_INLINE unsigned long (*Functions_Prefix_##_compare_hash_callback(void))(Custom_Key_Type_);\
-HASHMAP_INLINE size_t Functions_Prefix_##_hash_index(const Struct_Name_ *map, Custom_Key_Type_ key);\
+unsigned long (*Functions_Prefix_##_compare_hash_callback(void))(Custom_Key_Type_);\
+size_t Functions_Prefix_##_hash_index(const Struct_Name_ *map, Custom_Key_Type_ key);\
 unsigned long Functions_Prefix_##_fnv1a_32_buf(const void *buf, size_t len);\
 unsigned long Functions_Prefix_##_fnv1a_32_str(const char *str);
 
@@ -285,7 +275,7 @@ struct Struct_Name_;\
 struct Struct_Name_##ListNode;\
 HASHMAP_DEFINE_PANIC(Functions_Prefix_)\
 \
-HASHMAP_INLINE void Functions_Prefix_##_assert(const struct Struct_Name_ *map)\
+void Functions_Prefix_##_assert(const struct Struct_Name_ *map)\
 {\
 	/* If buckets is NULL, map should be in initial/freed state */\
 	if (map->buckets == NULL) {\
@@ -299,7 +289,7 @@ HASHMAP_INLINE void Functions_Prefix_##_assert(const struct Struct_Name_ *map)\
 }\
 \
 /* Separated into its own function to avoid Clang complexity warning */\
-HASHMAP_INLINE void Functions_Prefix_##_assert_internal(const struct Struct_Name_ *map)\
+void Functions_Prefix_##_assert_internal(const struct Struct_Name_ *map)\
 {\
 	/* Capacity must be a power of 2 and non-zero */\
 	assert(map->capacity > 0);\
@@ -355,13 +345,13 @@ void Functions_Prefix_##_init(struct Struct_Name_ *map)\
 	Functions_Prefix_##_assert(map);\
 }\
 \
-HASHMAP_INLINE int (*Functions_Prefix_##_compare_comparison_callback(void))(Custom_Key_Type_,\
+int (*Functions_Prefix_##_compare_comparison_callback(void))(Custom_Key_Type_,\
 								Custom_Key_Type_)\
 {\
 	return Custom_Comparison_Func_;\
 }\
 \
-HASHMAP_INLINE int Functions_Prefix_##_compare_keys(Custom_Key_Type_ key1, Custom_Key_Type_ key2)\
+int Functions_Prefix_##_compare_keys(Custom_Key_Type_ key1, Custom_Key_Type_ key2)\
 {\
 	int (*callback)(Custom_Key_Type_, Custom_Key_Type_) =\
 		Functions_Prefix_##_compare_comparison_callback();\
@@ -515,12 +505,12 @@ struct Struct_Name_##ListNode *Functions_Prefix_##_list_duplicate(struct Struct_
 	return new_head;\
 }\
 \
-HASHMAP_INLINE unsigned long (*Functions_Prefix_##_compare_hash_callback(void))(Custom_Key_Type_)\
+unsigned long (*Functions_Prefix_##_compare_hash_callback(void))(Custom_Key_Type_)\
 {\
 	return Custom_Hash_Func_;\
 }\
 \
-HASHMAP_INLINE size_t Functions_Prefix_##_hash_index(const struct Struct_Name_ *map,\
+size_t Functions_Prefix_##_hash_index(const struct Struct_Name_ *map,\
 					 Custom_Key_Type_ key)\
 {\
 	size_t idx = 0;\
@@ -720,12 +710,12 @@ int Functions_Prefix_##_get(const struct Struct_Name_ *RESTRICT map, Custom_Key_
 	return Functions_Prefix_##_list_find(map->buckets[idx], key, out);\
 }\
 \
-HASHMAP_INLINE int Functions_Prefix_##_has(const struct Struct_Name_ *map, Custom_Key_Type_ key)\
+int Functions_Prefix_##_has(const struct Struct_Name_ *map, Custom_Key_Type_ key)\
 {\
 	return Functions_Prefix_##_get(map, key, NULL);\
 }\
 \
-HASHMAP_INLINE size_t Functions_Prefix_##_size(const Struct_Name_ *map)\
+size_t Functions_Prefix_##_size(const Struct_Name_ *map)\
 {\
 	return map->size;\
 }\
@@ -889,4 +879,4 @@ unsigned long Functions_Prefix_##_fnv1a_32_str(const char *str)\
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.           *
  ****************************************************************************/
 
-#endif /* _SIMPLE_HASHMAP_H */
+#endif /* HASHMAP_H */
