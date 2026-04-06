@@ -39,6 +39,13 @@
  *
  * This library is not thread safe.
  *
+ * It is safe to cast uninitialized hashmaps to any other hashmap type.
+ *
+ * It is safe to cast initalized hashmaps to other hashmaps as long as their
+ * element sizes are equal. e.g. MapVoidPtrToU32 -> MapCharPtrToI32 is supported
+ * (both 8/4 bytes), but MapCharToU32 -> MapCharPtrToI32 is undefined behavior
+ * (1/4 bytes vs 8/4 bytes).
+ *
  * This library uses separate chaining with linked lists for collision
  * resolution.
  *
